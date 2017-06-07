@@ -1,0 +1,8 @@
+C:\git\Seismo\bin\Debug\netcoreapp1.1\Seismo.deps.json
+C:\git\Seismo\bin\Debug\netcoreapp1.1\Seismo.runtimeconfig.json
+C:\git\Seismo\bin\Debug\netcoreapp1.1\Seismo.runtimeconfig.dev.json
+C:\git\Seismo\bin\Debug\netcoreapp1.1\Seismo.dll
+C:\git\Seismo\bin\Debug\netcoreapp1.1\Seismo.pdb
+C:\git\Seismo\obj\Debug\netcoreapp1.1\Seismo.AssemblyInfo.cs
+C:\git\Seismo\obj\Debug\netcoreapp1.1\Seismo.dll
+C:\git\Seismo\obj\Debug\netcoreapp1.1\Seismo.pdb
