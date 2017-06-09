@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 
@@ -9,53 +10,75 @@ namespace Seismo
         //http://www.seiscomp3.org/wiki/doc/applications/seedlink
         static void Main(string[] args)
         {
-            TcpClient client = new TcpClient();
-
-            client.ConnectAsync("192.168.1.28",18000).Wait();
-
-            NetworkStream stream = client.GetStream();
-           SendCommand(stream,"HELLO");
-           var hello = ReadMore(stream);
-
-           SendCommand(stream,"INFO ALL");
-           var info = ReadMore(stream);
-
-           SendCommand(stream,"INFO STREAMS");
-           var streaminfo = ReadMore(stream);
-
-
-            SendCommand(stream,"STATION  R5807 AM");
-            var station = ReadMore(stream);
-            // Read the first batch of the TcpServer response bytes.
             
-            // SendCommand(stream,"SELECT 00SHZ.D.");
-            // var data1 = ReadMore(stream);
 
-            SendCommand(stream,"END");
+                TcpClient client = new TcpClient();
+                client.Client.ReceiveTimeout = 20;
 
-        //    var info1 = ReadMore(stream);
-        //    var info2 = ReadMore(stream);
-        //    var info3 = ReadMore(stream);
-            SendCommand(stream,"BYE");
+                client.ConnectAsync("192.168.1.28",18000).Wait();
+
+                using(NetworkStream stream = client.GetStream())
+                {
+                    bool exit = false;
+                    while (!exit)
+                    {
+                        try
+                        {
+                            Console.WriteLine("Enter command >>");
+                            string decision = Console.ReadLine();
+                    
+                            exit = decision == "exit";
+
+                            if (decision == "auto")
+                            {
+                                Console.WriteLine(SendCmd(stream,"HELLO"));
+                                Console.WriteLine(SendCmd(stream,"INFO STREAMS"));
+                                Console.WriteLine(SendCmd(stream,"STATION  R5807 AM"));
+                                Console.WriteLine(SendCmd(stream,"SELECT 00SHZ.D"));
+                                Console.WriteLine(SendCmd(stream, "TIME " + DateTime.Now.AddDays(-1).ToString("yyyy,MM,dd,HH,mm,ss"))); //"TIME 2017,06,08,17,55,59"));
+                                Console.WriteLine(SendCmd(stream,"END"));
+                            }else if (!exit)
+                            {
+                                Console.WriteLine(SendCmd(stream,decision));
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine(ex.ToString());
+                        }
+                }
+            }
         }
 
-        private static void SendCommand(NetworkStream stream,string command)
+
+        private static string SendCmd(NetworkStream stream,string command)
         {
-            var message = command + Environment.NewLine;
+            var data = System.Text.Encoding.ASCII.GetBytes(command + Environment.NewLine);
+           
+            // Set a 250 millisecond timeout for reading (instead of Infinite the default)
+            stream.ReadTimeout = 1000;
 
-            Byte[] data = System.Text.Encoding.ASCII.GetBytes(message);  
+            Console.Write(command +  ":::::");
 
-            stream.Write(data,0,data.Length);
+            stream.Write(data, 0, data.Length);
+            byte[] resp = new byte[2048];
+            var memStream = new MemoryStream();
+            int bytesread = stream.Read(resp, 0, resp.Length);
+
+            while (bytesread > 0)
+            {
+                memStream.Write(resp, 0, bytesread);
+                try
+                {
+                    bytesread = stream.Read(resp, 0, resp.Length);
+                }
+                catch
+                {
+                    bytesread = 0;
+                }
+            }
+            return System.Text.Encoding.ASCII.GetString(memStream.ToArray());
         }
 
-        private static string ReadMore(NetworkStream stream)
-        {
-            var data = new Byte[1086];
-
-            Int32 bytes = stream.Read(data, 0, data.Length);
-
-            // String to store the response ASCII representation.
-            return System.Text.Encoding.ASCII.GetString(data,0,data.Length);
-        }
     }
 }
